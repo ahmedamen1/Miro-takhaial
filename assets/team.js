@@ -8,14 +8,24 @@ const TEAM = [
   { id: "amin",   name: "Amin",   color: "#56CCF2", ink: "#06384a", board: "cyan"   },
   { id: "peter",  name: "Peter",  color: "#F2994A", ink: "#4a2a00", board: "orange" },
   { id: "wael",   name: "Wael",   color: "#EB5757", ink: "#4a0b0b", board: "red"    },
-  { id: "beso",   name: "Beso",   color: "#4F4F4F", ink: "#ffffff", board: "black"  },
-  { id: "bassam", name: "Bassam", color: "#BB6BD9", ink: "#3a0b4a", board: "purple" }
+  { id: "bassam", name: "Bassam", color: "#4F4F4F", ink: "#ffffff", board: "black"  }
 ];
 const TEAM_BY_ID = Object.fromEntries(TEAM.map(p => [p.id, p]));
 
+/* Anyone who already picked "Beso", or wrote notes as Beso, is Bassam —
+   the same person. Map the old id so nothing written earlier is orphaned. */
+const TEAM_ALIASES = { beso: "bassam" };
+function resolvePerson(id) { return TEAM_BY_ID[TEAM_ALIASES[id] || id] || null; }
+/* True when `me` wrote a note, allowing for an aliased old author id. */
+function ownsNote(me, note) {
+  if (!me || !note) return false;
+  const a = resolvePerson(note.author);
+  return !!a && a.id === me.id;
+}
+
 /* ---------- Identity ---------- */
 const WHO_KEY = "takhail.who";
-function getMe()      { try { return TEAM_BY_ID[localStorage.getItem(WHO_KEY)] || null; } catch (e) { return null; } }
+function getMe()      { try { return resolvePerson(localStorage.getItem(WHO_KEY)); } catch (e) { return null; } }
 function setMe(id)    { try { localStorage.setItem(WHO_KEY, id); } catch (e) {} dispatchEvent(new CustomEvent("tk:me")); }
 function clearMe()    { try { localStorage.removeItem(WHO_KEY); } catch (e) {} dispatchEvent(new CustomEvent("tk:me")); }
 function requireMe()  { const m = getMe(); if (!m) openWhoModal(); return m; }
@@ -71,7 +81,7 @@ function decodeNote(comment) {
   if (!m) return null;
   try {
     const d = JSON.parse(m[1]);
-    return { ...d, ghId: comment.id, authorName: (TEAM_BY_ID[d.author] || {}).name || d.author };
+    return { ...d, ghId: comment.id, authorName: (resolvePerson(d.author) || {}).name || d.author };
   } catch (e) { return null; }
 }
 
@@ -141,7 +151,7 @@ const NotesStore = {
   async remove(id) {
     const n = this.cache.find(x => x.id === id); if (!n) return;
     const me = getMe();
-    if (!me || me.id !== n.author) throw new Error("You can only delete your own notes");
+    if (!ownsNote(me, n)) throw new Error("You can only delete your own notes");
     if (n.ghId && ghConfigured()) {
       try { await ghFetch(`/repos/${ghRepo()}/issues/comments/${n.ghId}`, { method: "DELETE" }); }
       catch (e) { this.error = e.message; }
@@ -218,6 +228,8 @@ function paintWhoChip() {
 }
 
 function modal(html, onMount) {
+  // only one dialog at a time — reopening replaces whatever is showing
+  document.querySelectorAll(".modal-back").forEach(m => m.remove());
   const back = document.createElement("div");
   back.className = "modal-back";
   back.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${html}</div>`;
@@ -329,20 +341,20 @@ function renderThread(box, anchor) {
       💬 <span>${notes.length ? notes.length + (notes.length === 1 ? " note" : " notes") : "Add a note"}</span>
       ${notes.length ? `<span class="who-dots">${
         [...new Set(notes.map(n => n.author))].map(a => {
-          const p = TEAM_BY_ID[a] || { color: "#999" };
+          const p = resolvePerson(a) || { color: "#999" };
           return `<i style="background:${p.color}"></i>`;
         }).join("")}</span>` : ""}
     </button>
     <div class="thread-body" hidden>
       <div class="thread-list">${notes.length ? notes.map(n => {
-        const p = TEAM_BY_ID[n.author] || { color: "#999", ink: "#fff", name: n.author };
+        const p = resolvePerson(n.author) || { color: "#999", ink: "#fff", name: n.author };
         return `<div class="tnote ${n.kind === "question" ? "q" : ""}" style="--pc:${p.color}">
           <div class="tnote-head">
             <span class="avatar sm" style="background:${p.color};color:${p.ink}">${esc(p.name[0])}</span>
             <strong>${esc(p.name)}</strong>
             ${n.kind === "question" ? `<span class="qtag">question</span>` : ""}
             <span class="tnote-time">${timeAgo(n.ts)}${n.pending ? " · not synced" : ""}</span>
-            ${me && me.id === n.author ? `<button class="tnote-del" data-del="${esc(n.id)}" type="button" title="Delete">×</button>` : ""}
+            ${ownsNote(me, n) ? `<button class="tnote-del" data-del="${esc(n.id)}" type="button" title="Delete">×</button>` : ""}
           </div>
           <p>${esc(n.text).replace(/\n/g, "<br>")}</p>
         </div>`;
@@ -396,5 +408,8 @@ async function bootPage(active) {
   await NotesStore.load();
   mountNotes(document);
   refreshAllThreads();
-  if (!getMe()) setTimeout(openWhoModal, 400);
+  // nudge a first-time visitor to pick a name, unless they already opened something
+  if (!getMe()) setTimeout(() => {
+    if (!getMe() && !document.querySelector(".modal-back")) openWhoModal();
+  }, 400);
 }

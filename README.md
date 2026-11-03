@@ -87,8 +87,7 @@ Your token is stored in your own browser's `localStorage` only. It is never writ
 | Amin | cyan |
 | Peter | orange |
 | Wael | red |
-| Beso | black |
-| Bassam | purple |
+| Bassam | black |
 
 Colours are taken from the sticky colours each person used on the board. To add or rename someone, edit the `TEAM` array at the top of `assets/team.js`.
 

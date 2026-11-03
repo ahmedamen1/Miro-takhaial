@@ -145,13 +145,13 @@ function paint() {
   const all = NotesStore.cache;
 
   document.getElementById("byPerson").innerHTML = TEAM.map(p => {
-    const n = all.filter(x => x.author === p.id).length;
+    const n = all.filter(x => (resolvePerson(x.author) || {}).id === p.id).length;
     return `<div class="pcount" style="--pc:${p.color}"><b>${n}</b><span>${p.name}</span></div>`;
   }).join("");
 
   let list = all.slice();
   if (filter === "questions") list = list.filter(n => n.kind === "question");
-  else if (filter.startsWith("p:")) list = list.filter(n => n.author === filter.slice(2));
+  else if (filter.startsWith("p:")) list = list.filter(n => (resolvePerson(n.author) || {}).id === filter.slice(2));
   list.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
   const feed = document.getElementById("feed");
@@ -164,7 +164,7 @@ function paint() {
 
   const me = getMe();
   feed.innerHTML = list.map(n => {
-    const p = TEAM_BY_ID[n.author] || { color:"#999", ink:"#fff", name:n.author };
+    const p = resolvePerson(n.author) || { color:"#999", ink:"#fff", name:n.author };
     const [href, label] = whereOf(n.anchor);
     return `<div class="fnote ${n.kind === "question" ? "q" : ""}" style="--pc:${p.color}">
       <div class="fnote-head">
@@ -173,7 +173,7 @@ function paint() {
         ${n.kind === "question" ? `<span class="qtag">question</span>` : ""}
         <span class="fnote-meta">
           ${esc(timeAgo(n.ts))}${n.pending ? " · not synced" : ""}
-          ${me && me.id === n.author ? `<button class="tnote-del" data-del="${esc(n.id)}" type="button" title="Delete">×</button>` : ""}
+          ${ownsNote(me, n) ? `<button class="tnote-del" data-del="${esc(n.id)}" type="button" title="Delete">×</button>` : ""}
         </span>
       </div>
       <p>${esc(n.text).replace(/\n/g, "<br>")}</p>
