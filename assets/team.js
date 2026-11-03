@@ -30,7 +30,42 @@ function setMe(id)    { try { localStorage.setItem(WHO_KEY, id); } catch (e) {} 
 function clearMe()    { try { localStorage.removeItem(WHO_KEY); } catch (e) {} dispatchEvent(new CustomEvent("tk:me")); }
 function requireMe()  { const m = getMe(); if (!m) openWhoModal(); return m; }
 
-/* ---------- GitHub Issues backend ----------
+/* ---------- Supabase backend (the shared one) ----------
+   Set TK_SUPABASE_URL and TK_SUPABASE_KEY once in assets/config.js and every
+   teammate sees the same notes with no setup of their own: no account, no
+   token, no GitHub. The anon key is designed to be public — row-level
+   security on the table is what controls access.                            */
+function sbUrl() { return (window.TK_SUPABASE_URL || "").replace(/\/+$/, ""); }
+function sbKey() { return window.TK_SUPABASE_KEY || ""; }
+function sbConfigured() { return !!(sbUrl() && sbKey()); }
+
+async function sbFetch(path, opts = {}) {
+  const res = await fetch(sbUrl() + "/rest/v1" + path, {
+    ...opts,
+    headers: {
+      "apikey": sbKey(),
+      "Authorization": "Bearer " + sbKey(),
+      "Content-Type": "application/json",
+      ...(opts.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error("Supabase " + res.status + ": " + txt.slice(0, 180));
+  }
+  if (res.status === 204) return null;
+  const body = await res.text();
+  return body ? JSON.parse(body) : null;
+}
+
+/* Rows come back exactly as the page stores them. */
+function fromRow(r) {
+  return { id: r.id, author: r.author, anchor: r.anchor, kind: r.kind,
+           text: r.text, ts: Number(r.ts),
+           authorName: (resolvePerson(r.author) || {}).name || r.author };
+}
+
+/* ---------- GitHub Issues backend (optional alternative) ----------
    Each person pastes their own fine-grained token once. It is stored only in
    their own browser (localStorage) and never committed to the repo.
    Repo config lives in window.TK_REPO (set in each page or in config.js).     */
@@ -97,11 +132,31 @@ function saveLocalNotes(arr) {
 /* ---------- Unified notes API ---------- */
 const NotesStore = {
   cache: [],
-  mode: "local",          // "github" | "local"
+  mode: "local",          // "supabase" | "github" | "local"
   error: null,
 
   async load() {
     this.cache = localNotes();
+
+    /* Supabase first: it is the one everyone shares with no setup. */
+    if (sbConfigured()) {
+      try {
+        const rows = await sbFetch("/notes?select=*&order=ts.asc&limit=5000");
+        const out = (rows || []).map(fromRow);
+        const remoteIds = new Set(out.map(n => n.id));
+        // anything written while offline is kept and retried
+        const pending = this.cache.filter(n => !remoteIds.has(n.id) && n.pending);
+        this.cache = [...out, ...pending];
+        saveLocalNotes(this.cache);
+        this.mode = "supabase"; this.error = null;
+        if (pending.length) this.flush();     // try to push what never made it
+        return this.cache;
+      } catch (e) {
+        this.mode = "local"; this.error = e.message;
+        return this.cache;
+      }
+    }
+
     if (!ghConfigured()) { this.mode = "local"; return this.cache; }
     try {
       const out = [];
@@ -122,6 +177,22 @@ const NotesStore = {
     return this.cache;
   },
 
+  /* Push any note that was written while the connection was down. */
+  async flush() {
+    if (!sbConfigured()) return;
+    const pending = this.cache.filter(n => n.pending);
+    for (const n of pending) {
+      try {
+        await sbFetch("/notes", { method: "POST", headers: { Prefer: "resolution=merge-duplicates" },
+          body: JSON.stringify({ id: n.id, author: n.author, anchor: n.anchor,
+                                 kind: n.kind, text: n.text, ts: n.ts }) });
+        delete n.pending;
+      } catch (e) { this.error = e.message; break; }
+    }
+    saveLocalNotes(this.cache);
+    dispatchEvent(new CustomEvent("tk:notes"));
+  },
+
   for(anchor) {
     return this.cache.filter(n => n.anchor === anchor)
                      .sort((a, b) => (a.ts || 0) - (b.ts || 0));
@@ -137,6 +208,20 @@ const NotesStore = {
       text: text.trim(), ts: Date.now(), pending: true
     };
     this.cache.push(note); saveLocalNotes(this.cache);
+    dispatchEvent(new CustomEvent("tk:notes"));   // show it immediately
+
+    if (sbConfigured()) {
+      try {
+        await sbFetch("/notes", { method: "POST",
+          body: JSON.stringify({ id: note.id, author: note.author, anchor: note.anchor,
+                                 kind: note.kind, text: note.text, ts: note.ts }) });
+        delete note.pending; this.error = null;
+      } catch (e) { this.error = e.message; }
+      saveLocalNotes(this.cache);
+      dispatchEvent(new CustomEvent("tk:notes"));
+      return note;
+    }
+
     if (ghConfigured()) {
       try {
         const c = await ghFetch(`/repos/${ghRepo()}/issues/${ghIssue()}/comments`,
@@ -152,6 +237,10 @@ const NotesStore = {
     const n = this.cache.find(x => x.id === id); if (!n) return;
     const me = getMe();
     if (!ownsNote(me, n)) throw new Error("You can only delete your own notes");
+    if (sbConfigured()) {
+      try { await sbFetch("/notes?id=eq." + encodeURIComponent(id), { method: "DELETE" }); }
+      catch (e) { this.error = e.message; }
+    }
     if (n.ghId && ghConfigured()) {
       try { await ghFetch(`/repos/${ghRepo()}/issues/comments/${n.ghId}`, { method: "DELETE" }); }
       catch (e) { this.error = e.message; }
@@ -267,25 +356,53 @@ function openWhoModal() {
 }
 
 function openSettings() {
+  const m = NotesStore.mode;
+  const status = m === "supabase"
+    ? `<div class="sync-ok"><b>✓ Shared with the team.</b> Everyone who opens this board sees the same notes, and new ones appear within about 20 seconds. ${NotesStore.cache.length} notes loaded.</div>`
+    : m === "github"
+    ? `<div class="sync-ok"><b>✓ Connected to GitHub.</b> ${NotesStore.cache.length} notes loaded from issue #${esc(ghIssue())}.</div>`
+    : `<div class="sync-warn"><b>Not shared yet.</b> Your notes are saved in this browser only, so the rest of the team cannot see them.
+       ${sbConfigured() || ghConfigured()
+         ? `Could not reach the server${NotesStore.error ? `: ${esc(NotesStore.error)}` : ""}. Your notes are safe here and will be sent once the connection is back.`
+         : `Whoever set this board up needs to fill in the two Supabase lines in <code>assets/config.js</code> — that switches sharing on for everybody at once, with nothing to set up on your side.`}</div>`;
+
   modal(`
-    <h3>Shared notes sync</h3>
-    <p class="modal-sub">Notes are saved in your browser straight away. To share them live with the team, connect this board to a GitHub issue — everyone points at the same issue and sees the same notes.</p>
-    <label class="fld"><span>Repository <em>owner/repo</em></span>
-      <input type="text" id="sRepo" placeholder="takhail/workshop-board" value="${esc(ghRepo())}"></label>
-    <label class="fld"><span>Issue number <em>the issue used as the notes database</em></span>
-      <input type="text" id="sIssue" placeholder="1" value="${esc(ghIssue())}"></label>
-    <label class="fld"><span>Your GitHub token <em>fine-grained, Issues: read &amp; write, this repo only</em></span>
-      <input type="password" id="sTok" placeholder="github_pat_..." value="${esc(ghToken())}"></label>
-    <p class="warn">Your token is stored only in this browser. Never commit it to the repository, and never paste someone else's token here.</p>
-    <div class="modal-foot">
-      <button class="btn" id="sSave" type="button">Save &amp; sync</button>
+    <h3>Shared notes</h3>
+    ${status}
+    <div class="modal-foot" style="margin-top:16px">
+      <button class="btn" id="sRefresh" type="button">↻ Refresh now</button>
       <button class="btn ghost" id="sExport" type="button">Export notes</button>
       <button class="btn ghost" id="sImport" type="button">Import notes</button>
-      <button class="btn ghost" id="sClear" type="button">Disconnect</button>
       <button class="btn ghost" data-close type="button">Close</button>
     </div>
+
+    <details style="margin-top:18px">
+      <summary style="cursor:pointer;font-size:.86rem;color:var(--mute)">Use a GitHub issue instead (needs your own token)</summary>
+      <div style="margin-top:12px">
+        <label class="fld"><span>Repository <em>owner/repo</em></span>
+          <input type="text" id="sRepo" placeholder="owner/repo" value="${esc(ghRepo())}"></label>
+        <label class="fld"><span>Issue number</span>
+          <input type="text" id="sIssue" placeholder="1" value="${esc(ghIssue())}"></label>
+        <label class="fld"><span>Your GitHub token <em>fine-grained, Issues: read &amp; write, this repo only</em></span>
+          <input type="password" id="sTok" placeholder="github_pat_..." value="${esc(ghToken())}"></label>
+        <p class="warn">Your token is stored only in this browser. Never commit it to the repository, and never paste someone else's token here.</p>
+        <div class="modal-foot">
+          <button class="btn" id="sSave" type="button">Save &amp; sync</button>
+          <button class="btn ghost" id="sClear" type="button">Disconnect</button>
+        </div>
+      </div>
+    </details>
     <p id="sMsg" class="modal-sub" style="margin-top:10px"></p>`, (back, close) => {
     const msg = back.querySelector("#sMsg");
+    back.querySelector("#sRefresh").onclick = async (e) => {
+      e.target.disabled = true; msg.textContent = "Refreshing…";
+      await NotesStore.load();
+      msg.textContent = NotesStore.mode === "local"
+        ? "Still not shared. " + (NotesStore.error || "")
+        : `Up to date — ${NotesStore.cache.length} notes.`;
+      e.target.disabled = false;
+      dispatchEvent(new CustomEvent("tk:notes"));
+    };
     back.querySelector("#sSave").onclick = async () => {
       setGh(back.querySelector("#sTok").value, back.querySelector("#sRepo").value, back.querySelector("#sIssue").value);
       msg.textContent = "Connecting…";
@@ -412,4 +529,48 @@ async function bootPage(active) {
   if (!getMe()) setTimeout(() => {
     if (!getMe() && !document.querySelector(".modal-back")) openWhoModal();
   }, 400);
+  startAutoSync();
+  paintSyncBanner();
+  addEventListener("tk:notes", paintSyncBanner);
+}
+
+/* A quiet strip under the header when notes are NOT being shared, so nobody
+   writes a note believing the team can see it. */
+function paintSyncBanner() {
+  const shared = NotesStore.mode === "supabase" || NotesStore.mode === "github";
+  let el = document.getElementById("syncBanner");
+  if (shared) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "syncBanner";
+    el.className = "sync-banner";
+    const head = document.querySelector(".site-head");
+    if (head && head.parentNode) head.parentNode.insertBefore(el, head.nextSibling);
+    else document.body.prepend(el);
+  }
+  const reachable = sbConfigured() || ghConfigured();
+  el.innerHTML = `<span>⚠</span><div><b>These notes are only on this device.</b>
+    ${reachable
+      ? `The board could not reach the notes server, so the team cannot see them yet. They are saved here and will send once it is back.`
+      : `Sharing is not switched on yet, so nobody else can see what you write here.`}</div>
+    <button type="button" id="bannerMore">Details</button>`;
+  el.querySelector("#bannerMore").onclick = openSettings;
+}
+
+/* Poll for other people's notes so the board stays current without a reload.
+   Pauses while the tab is hidden, and refreshes as soon as it is back. */
+let autoSyncTimer = null;
+function startAutoSync(ms = 20000) {
+  if (!sbConfigured() || autoSyncTimer) return;
+  const tick = async () => {
+    if (document.hidden) return;
+    const before = NotesStore.cache.length;
+    const mode = NotesStore.mode;
+    await NotesStore.load();
+    if (NotesStore.cache.length !== before || NotesStore.mode !== mode) {
+      dispatchEvent(new CustomEvent("tk:notes"));
+    }
+  };
+  autoSyncTimer = setInterval(tick, ms);
+  addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
 }

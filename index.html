@@ -82,23 +82,24 @@
 
   <section class="blk" id="sync">
     <h2><span class="num">2</span> Sharing notes with the team</h2>
-    <p class="sub">This site is a set of static files, so it runs fine on GitHub Pages with nothing behind it. Notes are saved in your own browser immediately. To make them shared, the board stores notes as comments on one GitHub issue — everyone points at the same issue and sees the same notes.</p>
+    <p class="sub">Once sharing is switched on, there is nothing for you to set up: open the link, pick your name, and you see everyone's notes. New notes from the rest of the team appear on their own, without reloading.</p>
     <div class="cards">
       <div class="card">
-        <h3 style="margin:0 0 8px;font-size:1.02rem">One-time setup, per person</h3>
+        <h3 style="margin:0 0 8px;font-size:1.02rem">For everyone on the team</h3>
         <ol style="margin:0;padding-left:20px;font-size:.9rem;color:var(--mute);line-height:1.75">
-          <li>Open an issue in the team repo, call it <b>Board notes</b>, and note its number.</li>
-          <li>Make a <b>fine-grained personal access token</b> with <b>Issues: Read &amp; write</b>, limited to that one repository.</li>
-          <li>Click the <b>⚙</b> button up top, fill in the repo, the issue number and your token, then <b>Save &amp; sync</b>.</li>
+          <li>Open the board link.</li>
+          <li>Click <b>Pick your name</b> and choose yourself.</li>
+          <li>Write notes. That is all — no account, no sign-in, nothing to install.</li>
         </ol>
       </div>
       <div class="card">
-        <h3 style="margin:0 0 8px;font-size:1.02rem">If you skip the setup</h3>
-        <p style="margin:0;font-size:.9rem;color:var(--mute)">The board still works. Your notes save in your browser, and you can use <b>Export notes</b> in the ⚙ panel to send them to the team as a file, which anyone can pull in with <b>Import notes</b>.</p>
+        <h3 style="margin:0 0 8px;font-size:1.02rem">Switching sharing on (once, by one person)</h3>
+        <p style="margin:0 0 8px;font-size:.9rem;color:var(--mute)">Create a free Supabase project, run the small SQL snippet, and paste the project URL and anon key into <code>assets/config.js</code>. Full step-by-step instructions are written at the top of that file.</p>
+        <p style="margin:0;font-size:.9rem;color:var(--mute)">Until that is done, notes stay in each person's own browser and a warning strip shows at the top of every page.</p>
       </div>
-      <div class="card" style="border-left:4px solid var(--warn)">
-        <h3 style="margin:0 0 8px;font-size:1.02rem">⚠ About the token</h3>
-        <p style="margin:0;font-size:.9rem;color:var(--mute)">Your token is kept only in your own browser. <b>Never commit a token into these files</b> and never paste someone else's. If a token ever leaks, revoke it on GitHub — it takes one click.</p>
+      <div class="card">
+        <h3 style="margin:0 0 8px;font-size:1.02rem">If the connection drops</h3>
+        <p style="margin:0;font-size:.9rem;color:var(--mute)">Nothing is lost. Notes written while offline are kept in your browser, marked <b>not synced</b>, and sent automatically once the board can reach the server again.</p>
       </div>
     </div>
     <div class="row">
@@ -155,10 +156,11 @@ document.getElementById("syncBtn").onclick = openSettings;
 function paintState() {
   document.getElementById("nCount").textContent = NotesStore.cache.length;
   const s = document.getElementById("syncState");
-  s.textContent = NotesStore.mode === "github"
-    ? "✓ Connected to GitHub — notes are shared with the team."
-    : "Not connected — your notes are saved in this browser only.";
-  s.style.color = NotesStore.mode === "github" ? "var(--ok)" : "var(--mute)";
+  const shared = NotesStore.mode === "supabase" || NotesStore.mode === "github";
+  s.textContent = shared
+    ? "✓ Sharing is on — the whole team reads and writes the same notes."
+    : "Not shared yet — your notes are saved in this browser only.";
+  s.style.color = shared ? "var(--ok)" : "var(--warn)";
 }
 addEventListener("tk:notes", paintState);
 bootPage("index.html").then(paintState);

@@ -16,7 +16,7 @@ The Miro workshop board, rebuilt as a small static website the whole team can wr
 | `assets/team.js` | Team config, identity, notes storage, shared UI |
 | `assets/projects.js` | **The project catalogue — the single source of truth** |
 | `assets/scoring.js` | Criteria, weights, the shared score store, the matrix and the downloads |
-| `assets/config.js` | Optional team defaults for the repo and issue number |
+| `assets/config.js` | **Sharing setup — the two Supabase lines go here** |
 
 ## Opening one project
 
@@ -55,28 +55,58 @@ No build step, no dependencies, no server.
 
 ## Shared notes
 
-Notes save to each person's browser straight away, so the board works with zero setup. To make notes **shared**, the board stores them as comments on a single GitHub issue.
+**This has to be switched on once, or nobody sees anyone else's notes.** Until it is, every person's notes stay in their own browser and a warning strip shows at the top of every page.
 
-**Set up once, for the team**
+### Switching it on (one person, about 3 minutes, free)
 
-1. Open an issue in the repo — call it `Board notes`. Note its number (e.g. `1`).
-2. Optionally edit `assets/config.js` and fill in:
-   ```js
-   window.TK_REPO  = "owner/repo";
-   window.TK_ISSUE = "1";
+1. Sign in at [supabase.com](https://supabase.com) with GitHub and click **New project**. Any name and region will do.
+2. When it has finished setting up, open **SQL Editor**, paste this and press **Run**:
+
+   ```sql
+   create table if not exists notes (
+     id      text primary key,
+     author  text not null,
+     anchor  text not null,
+     kind    text not null default 'note',
+     text    text not null,
+     ts      bigint not null
+   );
+
+   alter table notes enable row level security;
+
+   create policy "team can read"   on notes for select using (true);
+   create policy "team can write"  on notes for insert with check (true);
+   create policy "team can delete" on notes for delete using (true);
    ```
-   This saves everyone from typing it. **Never put a token in this file.**
 
-**Set up once, per person**
+3. Open **Project Settings → API**, copy the **Project URL** and the **anon / public** key into the top of `assets/config.js`:
 
-1. GitHub → Settings → Developer settings → **Fine-grained personal access tokens** → Generate new token.
-2. Repository access: **Only select repositories** → this repo.
-3. Permissions → Repository permissions → **Issues: Read and write**.
-4. On the board, click **⚙** in the top-right, paste the repo, the issue number and your token, then **Save & sync**.
+   ```js
+   window.TK_SUPABASE_URL = "https://xxxxxxxx.supabase.co";
+   window.TK_SUPABASE_KEY = "eyJ...";
+   ```
 
-Your token is stored in your own browser's `localStorage` only. It is never written into these files and never sent anywhere except `api.github.com`. If a token leaks, revoke it in GitHub settings — it takes one click.
+4. Commit and push. Sharing is on for the whole team from that moment.
 
-**If you'd rather not use a token:** everything still works locally. Use **Export notes** in the ⚙ panel to hand your notes to the team as a JSON file, and **Import notes** to merge someone else's in.
+### For everyone else
+
+Nothing. Open the link, pick your name, write notes. No account, no token, no GitHub.
+
+New notes from other people appear on their own within about 20 seconds, and immediately when you switch back to the tab.
+
+### About the anon key
+
+The anon key is designed to live in a public web page — it is not a password. What it can do is decided entirely by the row-level security policies above, which allow reading, adding and deleting notes on this one table and nothing else. **Do not** paste the `service_role` key into this file; that one is a real secret.
+
+Anyone with the board link can read and write the notes. That is the intent for a team board. If the notes need to be private, make the repository private and host the page somewhere that requires a login.
+
+### If the connection drops
+
+Nothing is lost. Notes written while offline are kept in the browser, marked **not synced**, and sent automatically once the board can reach the server again.
+
+### The older GitHub-issue option
+
+If you would rather not use Supabase, the board can store notes as comments on a GitHub issue instead — set `TK_ISSUE` in `assets/config.js`, and each person adds their own fine-grained token (Issues: read & write) under **⚙ → Use a GitHub issue instead**. It only works for people who have a GitHub account and repo access, which is why Supabase is the default.
 
 ## The team
 

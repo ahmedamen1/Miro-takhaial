@@ -51,10 +51,10 @@
   <div class="feed" id="feed"></div>
 
   <div class="card" style="margin-top:28px">
-    <h3 style="margin:0 0 8px;font-size:1.05rem">Keeping the feed shared</h3>
+    <h3 style="margin:0 0 8px;font-size:1.05rem">Sharing these notes</h3>
     <p style="margin:0 0 12px;color:var(--mute);font-size:.9rem" id="modeLine"></p>
     <div class="row" style="margin:0">
-      <button class="btn" id="refreshBtn" type="button">↻ Refresh from GitHub</button>
+      <button class="btn" id="refreshBtn" type="button">↻ Refresh</button>
       <button class="btn ghost" id="setBtn2" type="button">⚙ Sync settings</button>
     </div>
   </div>
@@ -190,15 +190,17 @@ function paint() {
 
 function paintMode() {
   const l = document.getElementById("modeLine");
-  l.innerHTML = NotesStore.mode === "github"
+  l.innerHTML = NotesStore.mode === "supabase"
+    ? `<b style="color:var(--ok)">✓ Shared with the team.</b> Everyone who opens this board reads and writes the same notes, and new ones appear within about 20 seconds without reloading.`
+    : NotesStore.mode === "github"
     ? `<b style="color:var(--ok)">✓ Connected to GitHub.</b> Notes are stored as comments on issue #${esc(ghIssue())} in <code>${esc(ghRepo())}</code>, so everyone with the board open sees the same feed.`
-    : `<b>Not connected.</b> Your notes are saved in this browser only. Open the sync settings to connect the board to the team's GitHub issue, or export them as a file.${NotesStore.error ? ` <br><span style="color:var(--warn)">Last error: ${esc(NotesStore.error)}</span>` : ""}`;
+    : `<b style="color:var(--warn)">Not shared yet.</b> Your notes are saved in this browser only, so the rest of the team cannot see them. Sharing is switched on by filling in the two Supabase lines in <code>assets/config.js</code> — after that nobody needs to set anything up.${NotesStore.error ? ` <br><span style="color:var(--warn)">Last error: ${esc(NotesStore.error)}</span>` : ""}`;
 }
 
 document.getElementById("refreshBtn").onclick = async (e) => {
   e.target.disabled = true; e.target.textContent = "Refreshing…";
   await NotesStore.load(); paint(); paintMode();
-  e.target.disabled = false; e.target.textContent = "↻ Refresh from GitHub";
+  e.target.disabled = false; e.target.textContent = "↻ Refresh";
 };
 document.getElementById("setBtn2").onclick = openSettings;
 
