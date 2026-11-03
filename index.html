@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Takhail Board — Team Workspace</title>
+<meta name="description" content="The Takhail workshop board: targets, problems, projects and a scoring tool the whole team can write notes on.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233b63d8'/><rect x='7' y='7' width='8' height='8' rx='1.5' fill='%23ffd84d'/><rect x='17' y='7' width='8' height='8' rx='1.5' fill='%236FCF97'/><rect x='7' y='17' width='8' height='8' rx='1.5' fill='%23ff9f6b'/><rect x='17' y='17' width='8' height='8' rx='1.5' fill='%23fff'/></svg>">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="hero">
+  <span class="eyebrow">Takhail · Team Workspace</span>
+  <h1>The workshop board, made to work on.</h1>
+  <p>Everything from the Miro session — why we are here, our targets, our problems, every project idea and the handwritten notes — rebuilt as a live page. Pick your name, then leave notes and questions anywhere. Everyone sees who wrote what.</p>
+
+  <div class="hero-notes">
+    <div class="note y">Missing long term plan<span class="owner" style="background:#F2C94C;color:#4a3b00">Helmy</span></div>
+    <div class="note g">Lack of clients and actual live work<span class="owner" style="background:#6FCF97;color:#0d3b22">Yousef</span></div>
+    <div class="note c">Make our own AI model<span class="owner" style="background:#56CCF2;color:#06384a">Amin</span></div>
+    <div class="note r">Unicorn<span class="owner" style="background:#EB5757;color:#fff">Wael</span></div>
+    <div class="note o ar" dir="rtl">فرصة للنمو (مهنياً)<span class="owner" style="background:#F2994A;color:#4a2a00" dir="ltr">Peter</span></div>
+  </div>
+
+  <div class="row" style="justify-content:center">
+    <button class="btn dark" id="startBtn" type="button">Pick your name to start</button>
+    <a class="btn ghost" href="board.html">Open the board</a>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="tiles">
+    <a class="tile" href="board.html" style="--tc:#F2C94C">
+      <span class="ico">🗂️</span>
+      <h3>The Board</h3>
+      <p>Why we are here, Takhail targets, company problems and solutions, new fields to learn — every sticky note, with the Arabic ones translated.</p>
+      <div class="go">Read the board →</div>
+    </a>
+    <a class="tile" href="projects.html" style="--tc:#6FCF97">
+      <span class="ico">💡</span>
+      <h3>Projects &amp; Questions</h3>
+      <p>Every project idea grouped by theme — each with its own page to score and discuss — plus the seven questions and the readiness checklist.</p>
+      <div class="go">See the projects →</div>
+    </a>
+    <a class="tile" href="scoring.html" style="--tc:#3b63d8">
+      <span class="ico">📊</span>
+      <h3>Score &amp; Choose</h3>
+      <p>Score every project out of 10 against eight criteria taken from the board. Weighted totals, a ranking, and the importance matrix plotted live.</p>
+      <div class="go">Open the scorer →</div>
+    </a>
+    <a class="tile" href="notes.html" style="--tc:#BB6BD9">
+      <span class="ico">💬</span>
+      <h3>All Notes</h3>
+      <p>Every note and question the team has left, in one feed. Filter by person, or by questions only, and jump straight to where each one was written.</p>
+      <div class="go">Read the feed →</div>
+    </a>
+  </div>
+
+  <div class="stats" id="stats">
+    <div class="stat"><b>7</b><span>people on the board</span></div>
+    <div class="stat"><b id="pCount">0</b><span>project ideas</span></div>
+    <div class="stat"><b>15</b><span>company problems</span></div>
+    <div class="stat"><b id="nCount">0</b><span>team notes so far</span></div>
+  </div>
+
+  <section class="blk" id="vision-line">
+    <h2><span class="num">★</span> The vision product line</h2>
+    <p class="sub">Six named CCTV products, worked out from the board's single "Vision projects" note. Each opens its own page where you can score it and leave notes.</p>
+    <div class="tiles" id="visionTiles"></div>
+  </section>
+
+  <section class="blk" id="team">
+    <h2><span class="num">1</span> The team</h2>
+    <p class="sub">Each person has a colour, taken from the sticky notes they used on the board. Everything you write on this site is tagged with your name and your colour, so the rest of the team always knows who said what.</p>
+    <div class="legend" id="legend"></div>
+    <div class="callout" style="margin-top:16px">
+      <b>How to use this site:</b> click <b>Pick your name</b> in the top-right, choose yourself, and then click the <b>💬</b> button under any note, project or section to add a note or a question. Your notes show up in your colour, here and in the All Notes feed.
+    </div>
+  </section>
+
+  <section class="blk" id="sync">
+    <h2><span class="num">2</span> Sharing notes with the team</h2>
+    <p class="sub">This site is a set of static files, so it runs fine on GitHub Pages with nothing behind it. Notes are saved in your own browser immediately. To make them shared, the board stores notes as comments on one GitHub issue — everyone points at the same issue and sees the same notes.</p>
+    <div class="cards">
+      <div class="card">
+        <h3 style="margin:0 0 8px;font-size:1.02rem">One-time setup, per person</h3>
+        <ol style="margin:0;padding-left:20px;font-size:.9rem;color:var(--mute);line-height:1.75">
+          <li>Open an issue in the team repo, call it <b>Board notes</b>, and note its number.</li>
+          <li>Make a <b>fine-grained personal access token</b> with <b>Issues: Read &amp; write</b>, limited to that one repository.</li>
+          <li>Click the <b>⚙</b> button up top, fill in the repo, the issue number and your token, then <b>Save &amp; sync</b>.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 8px;font-size:1.02rem">If you skip the setup</h3>
+        <p style="margin:0;font-size:.9rem;color:var(--mute)">The board still works. Your notes save in your browser, and you can use <b>Export notes</b> in the ⚙ panel to send them to the team as a file, which anyone can pull in with <b>Import notes</b>.</p>
+      </div>
+      <div class="card" style="border-left:4px solid var(--warn)">
+        <h3 style="margin:0 0 8px;font-size:1.02rem">⚠ About the token</h3>
+        <p style="margin:0;font-size:.9rem;color:var(--mute)">Your token is kept only in your own browser. <b>Never commit a token into these files</b> and never paste someone else's. If a token ever leaks, revoke it on GitHub — it takes one click.</p>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="syncBtn" type="button">⚙ Open sync settings</button>
+      <span id="syncState" style="font-size:.87rem;color:var(--mute)"></span>
+    </div>
+  </section>
+
+  <section class="blk" id="source">
+    <h2><span class="num">3</span> What is on this site</h2>
+    <p class="sub">Everything readable from the Miro board has been carried over, including the handwritten marker notes that are easy to miss when you scroll past them.</p>
+    <div class="grid">
+      <div class="note y">Every sticky note from all five frames, grouped by who wrote it</div>
+      <div class="note o ar" dir="rtl">الملاحظات العربية بالعربي مع ترجمة تحتها<small dir="ltr">Arabic notes kept in Arabic with an English translation underneath</small></div>
+      <div class="note g">The handwritten project readiness checklist</div>
+      <div class="note c">The importance matrix, with its real axes: Time, Easy to sell, Risk, Novelty</div>
+      <div class="note r">The social media question cluster and the margin questions</div>
+      <div class="note b">The "Notes" frame: Green Flag, Don't fall in love with ideas, Time–Cost–Quality</div>
+    </div>
+    <div class="callout warn-c">
+      <b>One thing to confirm as a team:</b> the colour-to-person mapping is read off the board — the six large name notes at the left edge match the colour of the stickies in each frame. It is a reading of the colours, not something written on each note. If any note is attributed to the wrong person, leave a note on it and we will fix it.
+      <div data-notes="home-attribution"></div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="site-foot">
+  Takhail workshop board · built from the Miro session · <a href="notes.html">all team notes</a>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/team.js"></script>
+<script src="assets/projects.js"></script>
+<script>
+document.getElementById("pCount").textContent = PROJECTS.length;
+document.getElementById("visionTiles").innerHTML =
+  projectsIn("Vision & CCTV").filter(p => p.tagline).map(p => `
+    <a class="tile" href="${projectHref(p.id)}" style="--tc:#56CCF2">
+      <span class="ico">📹</span>
+      <h3>${esc(p.name)}</h3>
+      <p style="color:var(--accent);font-weight:600;font-size:.86rem;margin:0 0 8px">${esc(p.tagline)}</p>
+      <p>${esc(p.desc)}</p>
+      <div class="go">Open &amp; score →</div>
+    </a>`).join("");
+
+document.getElementById("legend").innerHTML = TEAM.map(p =>
+  `<span class="chip"><span class="avatar" style="background:${p.color};color:${p.ink}">${p.name[0]}</span>${p.name}</span>`).join("");
+
+document.getElementById("startBtn").onclick = openWhoModal;
+document.getElementById("syncBtn").onclick = openSettings;
+
+function paintState() {
+  document.getElementById("nCount").textContent = NotesStore.cache.length;
+  const s = document.getElementById("syncState");
+  s.textContent = NotesStore.mode === "github"
+    ? "✓ Connected to GitHub — notes are shared with the team."
+    : "Not connected — your notes are saved in this browser only.";
+  s.style.color = NotesStore.mode === "github" ? "var(--ok)" : "var(--mute)";
+}
+addEventListener("tk:notes", paintState);
+bootPage("index.html").then(paintState);
+</script>
+</body>
+</html>

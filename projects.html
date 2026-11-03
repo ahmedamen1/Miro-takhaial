@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects &amp; Questions — Takhail</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233b63d8'/><rect x='7' y='7' width='8' height='8' rx='1.5' fill='%23ffd84d'/><rect x='17' y='7' width='8' height='8' rx='1.5' fill='%236FCF97'/><rect x='7' y='17' width='8' height='8' rx='1.5' fill='%23ff9f6b'/><rect x='17' y='17' width='8' height='8' rx='1.5' fill='%23fff'/></svg>">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .pcard{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--r);padding:18px;box-shadow:var(--shadow);text-decoration:none;color:inherit;
+    transition:transform .14s,box-shadow .14s,border-color .14s;position:relative;overflow:hidden}
+  .pcard::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--tc,var(--accent))}
+  .pcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:var(--accent)}
+  .pcard h3{margin:4px 0 3px;font-size:1.06rem}
+  .pcard .tagline{color:var(--accent);font-weight:600;font-size:.85rem;margin:0 0 7px}
+  .pcard p.d{margin:0 0 12px;color:var(--mute);font-size:.87rem;line-height:1.5;flex:1}
+  .pcard .foot{display:flex;align-items:center;gap:9px;font-size:.8rem;flex-wrap:wrap}
+  .pcard .sc{font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+  .pcard .open{margin-left:auto;font-weight:700;color:var(--accent)}
+  .pcard .nb{color:var(--mute)}
+  .search-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0 6px}
+  .search-row input{flex:1 1 260px;width:auto}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <span class="eyebrow">Frame 5 + the checklists</span>
+  <h1>Projects &amp; Questions</h1>
+  <p>Every project idea on the board. Each one has its own page where you can score it, see where it lands on the matrix, and leave notes. Below the list: the seven questions to settle before taking a project, and the handwritten readiness checklist.</p>
+</div>
+
+<div class="wrap">
+  <div class="sticky-toc"><div id="toc"></div></div>
+
+  <div class="search-row">
+    <input type="text" id="search" placeholder="Search projects…" aria-label="Search projects">
+    <a class="btn ghost" href="scoring.html">Score them all together →</a>
+    <span class="tag grey" id="count"></span>
+  </div>
+
+  <div id="groups"></div>
+
+  <section class="blk" id="questions">
+    <h2><span class="num">7</span> Seven questions to answer before taking a project</h2>
+    <p class="sub">From the orange note beside <b>Bring Your Own Idea</b>. Tick the ones the team has settled — the count is saved in your browser. Each question has its own thread, so put your answer under the question itself.</p>
+    <div class="cards" id="qcards"></div>
+    <div class="card" style="margin-top:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <b id="qcount" style="font-size:1.05rem">0 of 7 settled</b>
+      <div style="flex:1;min-width:160px;height:9px;background:var(--line-soft);border-radius:999px;overflow:hidden">
+        <div id="qbar" style="height:100%;width:0;background:var(--ok);transition:width .25s"></div>
+      </div>
+      <button class="btn ghost sm" id="qreset" type="button">Reset ticks</button>
+    </div>
+  </section>
+
+  <section class="blk" id="readiness">
+    <h2><span class="num">8</span> Project readiness checklist</h2>
+    <p class="sub">Written in yellow marker beside the board — <b>"Every project should have…"</b>. It is the strongest piece of process on the whole board, so it gets its own section.</p>
+
+    <div class="card">
+      <div class="hand yellow">
+        <b>Every project should have:</b>
+        <ol>
+          <li>A vision &amp; mission</li>
+          <li>A full user story</li>
+          <li>A full breakdown structure &amp; documented testbeds</li>
+          <li>Backend revision criteria</li>
+          <li>A well-written readme file</li>
+          <li>Deployment criteria &amp; server specification</li>
+          <li>Notes for improvements</li>
+          <li>Tasks contribution for that project</li>
+        </ol>
+      </div>
+      <div data-notes="readiness-list"></div>
+    </div>
+
+    <h3 class="mini">And it should answer the question</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="hand yellow">For how long will this project be needed?</div>
+        <div data-notes="readiness-q-needed"></div>
+      </div>
+      <div class="card">
+        <div class="hand yellow">For how long will we work on this project?</div>
+        <div data-notes="readiness-q-work"></div>
+      </div>
+    </div>
+
+    <div class="callout warn-c" style="margin-top:16px">
+      <b>Worth deciding as a team:</b> is this checklist a gate (no project starts without it) or a target to grow into? That changes how the scoring page should treat a project that cannot meet it yet.
+      <div data-notes="readiness-gate"></div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="site-foot">
+  Takhail workshop board · <a href="board.html">the board</a> · <a href="scoring.html">score a project</a> · <a href="notes.html">all notes</a>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/team.js"></script>
+<script src="assets/projects.js"></script>
+<script src="assets/scoring.js"></script>
+<script>
+const GROUP_COLOR = {
+  "Agents for business":"#F2C94C",
+  "Vision & CCTV":"#56CCF2",
+  "E-commerce & messaging":"#6FCF97",
+  "Sports analysis":"#F2994A",
+  "Other industries":"#EB5757",
+  "Internal & platform":"#BB6BD9"
+};
+const slug = g => g.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+document.getElementById("toc").innerHTML =
+  PROJECT_GROUPS.map(g => `<a href="#${slug(g)}">${esc(g)}</a>`).join("") +
+  `<a href="#questions">7 questions</a><a href="#readiness">Readiness checklist</a>`;
+
+function renderGroups(filter) {
+  const f = (filter || "").trim().toLowerCase();
+  let shown = 0;
+  const html = PROJECT_GROUPS.map((g, gi) => {
+    const list = projectsIn(g).filter(p => !f ||
+      (p.name + " " + (p.tagline || "") + " " + (p.desc || "") + " " +
+       (p.features || []).join(" ") + " " + (p.sectors || []).join(" ")).toLowerCase().includes(f));
+    if (!list.length) return "";
+    shown += list.length;
+    return `<section class="blk" id="${slug(g)}">
+      <h2><span class="num">${gi + 1}</span> ${esc(g)}</h2>
+      <p class="sub">${list.length} project${list.length === 1 ? "" : "s"} — click any card to open, score and discuss it.</p>
+      <div class="cards">${list.map(p => {
+        const s = scoreOf(p.id), n = NotesStore.countFor("proj-" + p.id);
+        return `<a class="pcard" href="${projectHref(p.id)}" style="--tc:${GROUP_COLOR[g] || "#3b63d8"}">
+          <h3>${esc(p.name)}</h3>
+          ${p.tagline ? `<p class="tagline">${esc(p.tagline)}</p>` : ""}
+          <p class="d">${esc(p.desc || "")}</p>
+          <div class="foot">
+            <span class="sc">${s.toFixed(1)}</span><span class="nb">/10</span>
+            ${n ? `<span class="nb">· 💬 ${n}</span>` : ""}
+            <span class="open">Open →</span>
+          </div></a>`;
+      }).join("")}</div>
+    </section>`;
+  }).join("");
+  document.getElementById("groups").innerHTML = html ||
+    `<div class="card" style="text-align:center;color:var(--mute)">No project matches “${esc(filter)}”.</div>`;
+  document.getElementById("count").textContent = shown + " of " + PROJECTS.length + " projects";
+}
+
+document.getElementById("search").addEventListener("input", e => renderGroups(e.target.value));
+
+/* ---------- the seven questions ---------- */
+const QUESTIONS = [
+  ["q-domains",  "What specific tech domains or industries will we accept or refuse?"],
+  ["q-owns",     "Who owns the code?"],
+  ["q-stack",    "Do we have the dev stack to build this? And what if it is outside our expertise?"],
+  ["q-pricing",  "What will the pricing model be — fixed, or Time &amp; Materials?"],
+  ["q-research", "How do we accurately price unproven AI research upfront?"],
+  ["q-upkeep",   "Who updates and fixes the system when external APIs update or break?"],
+  ["q-scope",    "How do we stop clients adding “quick extra features” mid-build?"]
+];
+const QKEY = "takhail.qticks";
+let ticks = {};
+try { ticks = JSON.parse(localStorage.getItem(QKEY)) || {}; } catch (e) { ticks = {}; }
+
+document.getElementById("qcards").innerHTML = QUESTIONS.map(([id, text], i) => `
+  <div class="card">
+    <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer">
+      <input type="checkbox" data-q="${id}" ${ticks[id] ? "checked" : ""} style="width:18px;height:18px;margin-top:3px;flex:none;accent-color:var(--ok)">
+      <span><b style="color:var(--mute);font-size:.8rem">Q${i + 1}</b><br>${text}</span>
+    </label>
+    <div data-notes="${id}"></div>
+  </div>`).join("");
+
+function paintQ() {
+  const n = Object.values(ticks).filter(Boolean).length;
+  document.getElementById("qcount").textContent = n + " of 7 settled";
+  document.getElementById("qbar").style.width = (n / 7 * 100) + "%";
+}
+document.querySelectorAll("[data-q]").forEach(cb => cb.onchange = () => {
+  ticks[cb.dataset.q] = cb.checked;
+  try { localStorage.setItem(QKEY, JSON.stringify(ticks)); } catch (e) {}
+  paintQ();
+});
+document.getElementById("qreset").onclick = () => {
+  ticks = {}; try { localStorage.removeItem(QKEY); } catch (e) {}
+  document.querySelectorAll("[data-q]").forEach(cb => cb.checked = false);
+  paintQ();
+};
+paintQ();
+
+renderGroups("");
+bootPage("projects.html").then(() => renderGroups(document.getElementById("search").value));
+addEventListener("tk:notes", () => renderGroups(document.getElementById("search").value));
+</script>
+</body>
+</html>

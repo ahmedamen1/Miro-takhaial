@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>All Notes — Takhail</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233b63d8'/><rect x='7' y='7' width='8' height='8' rx='1.5' fill='%23ffd84d'/><rect x='17' y='7' width='8' height='8' rx='1.5' fill='%236FCF97'/><rect x='7' y='17' width='8' height='8' rx='1.5' fill='%23ff9f6b'/><rect x='17' y='17' width='8' height='8' rx='1.5' fill='%23fff'/></svg>">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .filters{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:16px 0 22px}
+  .fbtn{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 13px 5px 5px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;color:var(--ink)}
+  .fbtn.plain{padding:6px 14px}
+  .fbtn:hover{border-color:var(--accent)}
+  .fbtn.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .feed{display:flex;flex-direction:column;gap:12px}
+  .fnote{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--pc);border-radius:0 var(--r) var(--r) 0;padding:15px 18px;box-shadow:var(--shadow)}
+  .fnote.q{background:linear-gradient(90deg,color-mix(in srgb,var(--pc) 7%,#fff),#fff 55%)}
+  .fnote-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:7px}
+  .fnote-head strong{font-size:.95rem}
+  .fnote-meta{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:.76rem;color:var(--mute)}
+  .fnote p{margin:0 0 9px;font-size:.95rem;line-height:1.55;white-space:pre-wrap}
+  .where{font-size:.78rem;color:var(--mute)}
+  .where a{font-weight:600;text-decoration:none}
+  .where a:hover{text-decoration:underline}
+  .empty{text-align:center;padding:60px 20px;color:var(--mute)}
+  .empty .big{font-size:2.6rem;display:block;margin-bottom:12px}
+  .by-person{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:11px;margin-bottom:26px}
+  .pcount{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--pc);border-radius:var(--r);padding:14px 10px;text-align:center;box-shadow:var(--shadow)}
+  .pcount b{display:block;font-size:1.65rem;line-height:1.15;font-variant-numeric:tabular-nums}
+  .pcount span{font-size:.82rem;color:var(--mute)}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <span class="eyebrow">Everything the team has written</span>
+  <h1>All Notes</h1>
+  <p>Every note and question left anywhere on this site, newest first. Filter by person or show only the open questions, and click <b>jump to it</b> to go to exactly where a note was written.</p>
+</div>
+
+<div class="wrap">
+
+  <div class="by-person" id="byPerson"></div>
+
+  <div class="filters" id="filters">
+    <button class="fbtn plain on" data-f="all" type="button">Everyone</button>
+    <button class="fbtn plain" data-f="questions" type="button">❓ Questions only</button>
+    <span style="width:1px;height:24px;background:var(--line);margin:0 4px"></span>
+  </div>
+
+  <div class="feed" id="feed"></div>
+
+  <div class="card" style="margin-top:28px">
+    <h3 style="margin:0 0 8px;font-size:1.05rem">Keeping the feed shared</h3>
+    <p style="margin:0 0 12px;color:var(--mute);font-size:.9rem" id="modeLine"></p>
+    <div class="row" style="margin:0">
+      <button class="btn" id="refreshBtn" type="button">↻ Refresh from GitHub</button>
+      <button class="btn ghost" id="setBtn2" type="button">⚙ Sync settings</button>
+    </div>
+  </div>
+
+</div>
+
+<footer class="site-foot">
+  Takhail workshop board · <a href="index.html">home</a> · <a href="board.html">the board</a> · <a href="projects.html">projects</a> · <a href="scoring.html">scoring</a>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/team.js"></script>
+<script src="assets/projects.js"></script>
+<script>
+/* Where each anchor lives, so the feed can link back to it. */
+const ANCHOR_MAP = {
+  "home-attribution":   ["index.html#source",        "Home · colour attribution"],
+  "why-themes":         ["board.html#why",           "Board · why are you here"],
+  "targets-customers":  ["board.html#targets",       "Board · targets, customers and market"],
+  "targets-howwework":  ["board.html#targets",       "Board · targets, how we work"],
+  "targets-vision":     ["board.html#targets",       "Board · targets, vision and identity"],
+  "problems-list":      ["board.html#problems",      "Board · company problems"],
+  "problems-solutions": ["board.html#problems",      "Board · recommended solutions"],
+  "problems-sources":   ["board.html#problems",      "Board · where to find information"],
+  "social-cluster":     ["board.html#socials",       "Board · social media questions"],
+  "margin-q1":          ["board.html#margin",        "Board · margin question 1"],
+  "margin-q2":          ["board.html#margin",        "Board · margin question 2"],
+  "margin-q3":          ["board.html#margin",        "Board · margin question 3"],
+  "margin-q4":          ["board.html#margin",        "Board · margin question 4"],
+  "margin-q5":          ["board.html#margin",        "Board · margin question 5"],
+  "fields-all":         ["board.html#fields",        "Board · new fields"],
+  "notes-system":       ["board.html#notes-frame",   "Board · the system sketch"],
+  "notes-product":      ["board.html#notes-frame",   "Board · product thinking"],
+  "notes-todo":         ["board.html#notes-frame",   "Board · to-do and to-watch"],
+  "notes-triangle":     ["board.html#notes-frame",   "Board · time–cost–quality"],
+  "notes-greenflag":    ["board.html#notes-frame",   "Board · the green flag"],
+  "agents-whatneed":    ["projects.html#agents",     "Projects · what do we need to achieve"],
+  "readiness-list":     ["projects.html#readiness",  "Projects · readiness checklist"],
+  "readiness-q-needed": ["projects.html#readiness",  "Projects · how long will it be needed"],
+  "readiness-q-work":   ["projects.html#readiness",  "Projects · how long will we work on it"],
+  "readiness-gate":     ["projects.html#readiness",  "Projects · is the checklist a gate"],
+  "q-domains":          ["projects.html#questions",  "Projects · Q1 domains and industries"],
+  "q-owns":             ["projects.html#questions",  "Projects · Q2 who owns the code"],
+  "q-stack":            ["projects.html#questions",  "Projects · Q3 do we have the stack"],
+  "q-pricing":          ["projects.html#questions",  "Projects · Q4 pricing model"],
+  "q-research":         ["projects.html#questions",  "Projects · Q5 pricing unproven research"],
+  "q-upkeep":           ["projects.html#questions",  "Projects · Q6 who fixes broken APIs"],
+  "q-scope":            ["projects.html#questions",  "Projects · Q7 scope creep"],
+  "scoring-weights":    ["scoring.html#weights",     "Scoring · criteria and weights"],
+  "scoring-table":      ["scoring.html#table",       "Scoring · the score table"],
+  "scoring-ranking":    ["scoring.html#rank",        "Scoring · the ranking"],
+  "scoring-matrix":     ["scoring.html#matrix",      "Scoring · importance matrix"]
+};
+function whereOf(anchor) {
+  if (ANCHOR_MAP[anchor]) return ANCHOR_MAP[anchor];
+  // a note written on a project's own page, or on its card
+  for (const prefix of ["proj-", "score-"]) {
+    if (anchor.startsWith(prefix)) {
+      const id = anchor.slice(prefix.length);
+      const p = PROJECT_BY_ID[id];
+      if (p) return [projectHref(id) + (prefix === "score-" ? "#score" : "#discuss"),
+                     (prefix === "score-" ? "Scoring · " : "Project · ") + p.name];
+      const nice = id.replace(/-/g, " ").replace(/\b\w/g, m => m.toUpperCase());
+      return ["projects.html", "Projects · " + nice];
+    }
+  }
+  return ["index.html", anchor];
+}
+
+let filter = "all";
+
+function buildFilters() {
+  const f = document.getElementById("filters");
+  TEAM.forEach(p => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "fbtn"; b.dataset.f = "p:" + p.id;
+    b.innerHTML = `<span class="avatar" style="background:${p.color};color:${p.ink}">${p.name[0]}</span>${p.name}`;
+    f.appendChild(b);
+  });
+  f.querySelectorAll(".fbtn").forEach(b => b.onclick = () => {
+    filter = b.dataset.f;
+    f.querySelectorAll(".fbtn").forEach(x => x.classList.toggle("on", x === b));
+    paint();
+  });
+}
+
+function paint() {
+  const all = NotesStore.cache;
+
+  document.getElementById("byPerson").innerHTML = TEAM.map(p => {
+    const n = all.filter(x => x.author === p.id).length;
+    return `<div class="pcount" style="--pc:${p.color}"><b>${n}</b><span>${p.name}</span></div>`;
+  }).join("");
+
+  let list = all.slice();
+  if (filter === "questions") list = list.filter(n => n.kind === "question");
+  else if (filter.startsWith("p:")) list = list.filter(n => n.author === filter.slice(2));
+  list.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+  const feed = document.getElementById("feed");
+  if (!list.length) {
+    feed.innerHTML = `<div class="empty"><span class="big">💬</span>
+      <b>Nothing here yet.</b><br>
+      Open <a href="board.html">the board</a> or <a href="projects.html">the projects</a> and click a 💬 button to write the first note.</div>`;
+    return;
+  }
+
+  const me = getMe();
+  feed.innerHTML = list.map(n => {
+    const p = TEAM_BY_ID[n.author] || { color:"#999", ink:"#fff", name:n.author };
+    const [href, label] = whereOf(n.anchor);
+    return `<div class="fnote ${n.kind === "question" ? "q" : ""}" style="--pc:${p.color}">
+      <div class="fnote-head">
+        <span class="avatar" style="background:${p.color};color:${p.ink}">${esc(p.name[0])}</span>
+        <strong>${esc(p.name)}</strong>
+        ${n.kind === "question" ? `<span class="qtag">question</span>` : ""}
+        <span class="fnote-meta">
+          ${esc(timeAgo(n.ts))}${n.pending ? " · not synced" : ""}
+          ${me && me.id === n.author ? `<button class="tnote-del" data-del="${esc(n.id)}" type="button" title="Delete">×</button>` : ""}
+        </span>
+      </div>
+      <p>${esc(n.text).replace(/\n/g, "<br>")}</p>
+      <div class="where">on <b>${esc(label)}</b> · <a href="${href}">jump to it →</a></div>
+    </div>`;
+  }).join("");
+
+  feed.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    if (!confirm("Delete this note?")) return;
+    try { await NotesStore.remove(b.dataset.del); } catch (e) { alert(e.message); }
+  });
+}
+
+function paintMode() {
+  const l = document.getElementById("modeLine");
+  l.innerHTML = NotesStore.mode === "github"
+    ? `<b style="color:var(--ok)">✓ Connected to GitHub.</b> Notes are stored as comments on issue #${esc(ghIssue())} in <code>${esc(ghRepo())}</code>, so everyone with the board open sees the same feed.`
+    : `<b>Not connected.</b> Your notes are saved in this browser only. Open the sync settings to connect the board to the team's GitHub issue, or export them as a file.${NotesStore.error ? ` <br><span style="color:var(--warn)">Last error: ${esc(NotesStore.error)}</span>` : ""}`;
+}
+
+document.getElementById("refreshBtn").onclick = async (e) => {
+  e.target.disabled = true; e.target.textContent = "Refreshing…";
+  await NotesStore.load(); paint(); paintMode();
+  e.target.disabled = false; e.target.textContent = "↻ Refresh from GitHub";
+};
+document.getElementById("setBtn2").onclick = openSettings;
+
+addEventListener("tk:notes", () => { paint(); paintMode(); });
+addEventListener("tk:me", paint);
+
+buildFilters();
+bootPage("notes.html").then(() => { paint(); paintMode(); });
+</script>
+</body>
+</html>

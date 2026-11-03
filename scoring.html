@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Score &amp; Choose — Takhail</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233b63d8'/><rect x='7' y='7' width='8' height='8' rx='1.5' fill='%23ffd84d'/><rect x='17' y='7' width='8' height='8' rx='1.5' fill='%236FCF97'/><rect x='7' y='17' width='8' height='8' rx='1.5' fill='%23ff9f6b'/><rect x='17' y='17' width='8' height='8' rx='1.5' fill='%23fff'/></svg>">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .crit-src{color:var(--mute);font-size:.8rem}
+  #ptable th:first-child,#ptable td:first-child{position:sticky;left:0;background:var(--card);z-index:1;min-width:230px}
+  #ptable tbody tr:hover td:first-child{background:#fafbfd}
+  #ptable td:first-child a{text-decoration:none;color:inherit;font-weight:600}
+  #ptable td:first-child a:hover{color:var(--accent);text-decoration:underline}
+  .rank-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line-soft)}
+  .rank-row:last-child{border-bottom:0}
+  .rank-n{width:27px;height:27px;border-radius:8px;background:var(--line-soft);color:var(--mute);
+    display:grid;place-items:center;font-weight:800;font-size:.82rem;flex:none}
+  .rank-row:nth-child(1) .rank-n{background:#ffd84d;color:#4a3b00}
+  .rank-row:nth-child(2) .rank-n{background:#d6dde8;color:#2a3342}
+  .rank-row:nth-child(3) .rank-n{background:#e8c9a0;color:#4a2a00}
+  .rank-row a{flex:0 1 260px;font-weight:600;font-size:.92rem;text-decoration:none;color:inherit}
+  .rank-row a:hover{color:var(--accent);text-decoration:underline}
+  .rank-bar{flex:1;height:8px;background:var(--line-soft);border-radius:999px;overflow:hidden;min-width:70px}
+  .rank-bar i{display:block;height:100%;background:var(--accent)}
+  .rank-score{font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent);min-width:52px;text-align:right}
+  .grp-row td{background:var(--bg);font-weight:800;font-size:.74rem;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--mute);padding-top:14px}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <span class="eyebrow">Frames 6 &amp; 7 · the decision tool</span>
+  <h1>Score &amp; Choose a Project</h1>
+  <p>Score each project <b>0 to 10</b> on every criterion — plain numbers, so the maths is easy to check by hand. Each criterion carries a weight, also 0 to 10. The total is the weighted average, and the matrix below plots every project live and downloads with all the titles on it.</p>
+</div>
+
+<div class="wrap">
+  <div class="sticky-toc"><div>
+    <a href="#weights">Criteria &amp; weights</a>
+    <a href="#table">Score the projects</a>
+    <a href="#rank">Ranking</a>
+    <a href="#matrix">Importance matrix</a>
+    <a href="projects.html">Open one project</a>
+  </div></div>
+
+  <div class="callout" style="margin-top:18px">
+    <b>How the number works:</b> every criterion is scored 0–10 where <b>10 is always good</b>. So for <em>Low cost / low risk</em> and <em>Fast to deliver</em>, 10 means cheap and quick, not expensive and slow. Final score = Σ(score × weight) ÷ Σ(weight), which keeps it on the same 0–10 scale. Click any project name to open its own page.
+  </div>
+
+  <section class="blk" id="weights">
+    <h2><span class="num">1</span> Criteria and weights</h2>
+    <p class="sub">The eight criteria come straight from the board — the importance matrix axes, the seven questions, the company targets and the company problems. Change a weight to say how much the team cares about that criterion.</p>
+    <div class="card" style="overflow-x:auto">
+      <table id="wtable">
+        <thead><tr><th>Criterion</th><th>Where it comes from on the board</th><th style="width:140px">Weight 0–10</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div data-notes="scoring-weights"></div>
+  </section>
+
+  <section class="blk" id="table">
+    <h2><span class="num">2</span> Score the projects</h2>
+    <p class="sub">Type a number or use the − / + buttons. Everything saves to your browser as you go, and matches each project's own page. Scroll sideways on a narrow screen — the project name stays pinned.</p>
+    <div class="row">
+      <input type="text" id="newname" placeholder="Add another project idea…">
+      <button class="btn" id="addbtn" type="button">Add project</button>
+      <button class="btn ghost" id="resetbtn" type="button">Reset all to 5</button>
+      <button class="btn ghost" id="exportbtn" type="button">⬇ Download scores (CSV)</button>
+    </div>
+    <div class="card" style="overflow-x:auto;padding:12px">
+      <table id="ptable"><thead></thead><tbody></tbody></table>
+    </div>
+    <div data-notes="scoring-table"></div>
+  </section>
+
+  <section class="blk" id="rank">
+    <h2><span class="num">3</span> Ranking</h2>
+    <p class="sub">Weighted score out of 10, highest first. Click a name to open that project.</p>
+    <div class="card"><div id="rank"></div></div>
+    <div data-notes="scoring-ranking"></div>
+  </section>
+
+  <section class="blk" id="matrix">
+    <h2><span class="num">4</span> Importance matrix</h2>
+    <p class="sub">On the board this is a hand-drawn 12 × 10 grid with its axes written in red marker: <b>Time</b> at the top, <b>Easy to sell (in demand)</b> at the bottom, <b>Risk (high cost)</b> on the left and <b>Novelty / hard to achieve</b> on the right. The live version below plots every project using the scores you set above — pick which criterion drives each axis.</p>
+
+    <div class="row">
+      <label style="font-size:.86rem;font-weight:600">X axis
+        <select id="xaxis" style="width:auto;margin-left:6px"></select></label>
+      <label style="font-size:.86rem;font-weight:600">Y axis
+        <select id="yaxis" style="width:auto;margin-left:6px"></select></label>
+      <span class="tag grey" id="axisHint"></span>
+    </div>
+
+    <svg id="plot" role="img" aria-label="Project matrix plotting the scored projects on two chosen criteria"></svg>
+
+    <div class="row">
+      <button class="btn" id="dlPng" type="button">⬇ Download matrix (PNG)</button>
+      <button class="btn ghost" id="dlSvg" type="button">⬇ Download matrix (SVG)</button>
+      <span class="tag grey">the download adds a numbered key with every project title</span>
+    </div>
+    <p class="sub" style="margin-top:4px">Numbers on the dots match the numbers in the scoring table. Hover a dot to see its project name. The downloaded picture lists all the titles underneath, so it stands on its own in a slide or a message.</p>
+    <div data-notes="scoring-matrix"></div>
+  </section>
+
+</div>
+
+<footer class="site-foot">
+  Takhail workshop board · <a href="board.html">the board</a> · <a href="projects.html">projects &amp; questions</a> · <a href="notes.html">all notes</a>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/team.js"></script>
+<script src="assets/projects.js"></script>
+<script src="assets/scoring.js"></script>
+<script>
+/* ---------- weights ---------- */
+function buildWeights() {
+  const tb = document.querySelector("#wtable tbody"); tb.innerHTML = "";
+  CRITERIA.forEach(c => {
+    const tr = document.createElement("tr");
+    const a = document.createElement("td"); a.innerHTML = `<b>${esc(c.n)}</b>`;
+    const b = document.createElement("td"); b.innerHTML = `<span class="crit-src">${esc(c.s)}</span>`;
+    const d = document.createElement("td"); d.className = "ctr";
+    d.appendChild(makeStepper(SCORES.weights[c.k], v => { SCORES.weights[c.k] = v; saveScores(); refresh(); }));
+    tr.append(a, b, d); tb.appendChild(tr);
+  });
+}
+
+/* ---------- the score table, grouped ---------- */
+let ORDER = [];
+function buildTable() {
+  const head = document.querySelector("#ptable thead"), body = document.querySelector("#ptable tbody");
+  head.innerHTML = "<tr><th>Project</th>" +
+    CRITERIA.map(c => `<th title="${esc(c.s)}">${esc(c.n)}</th>`).join("") +
+    "<th>Score</th><th></th></tr>";
+  body.innerHTML = "";
+  ORDER = [];
+
+  const extras = allRowKeys().filter(k => !rowIsCatalogue(k));
+  const blocks = PROJECT_GROUPS.map(g => [g, projectsIn(g).map(p => p.id)]);
+  if (extras.length) blocks.push(["Added by the team", extras]);
+
+  let n = 0;
+  blocks.forEach(([g, keys]) => {
+    if (!keys.length) return;
+    const gr = document.createElement("tr"); gr.className = "grp-row";
+    gr.innerHTML = `<td colspan="${CRITERIA.length + 3}">${esc(g)}</td>`;
+    body.appendChild(gr);
+
+    keys.forEach(key => {
+      ORDER.push(key);
+      n++;
+      const tr = document.createElement("tr");
+      const td1 = document.createElement("td");
+      td1.innerHTML = rowIsCatalogue(key)
+        ? `<b>${n}.</b> <a href="${projectHref(key)}">${esc(rowName(key))}</a>`
+        : `<b>${n}.</b> ${esc(rowName(key))}`;
+      tr.appendChild(td1);
+      CRITERIA.forEach(c => {
+        const td = document.createElement("td"); td.className = "ctr";
+        td.appendChild(makeStepper(SCORES.projects[key][c.k], v => {
+          SCORES.projects[key][c.k] = v; saveScores(); refresh();
+        }));
+        tr.appendChild(td);
+      });
+      const ts = document.createElement("td");
+      ts.className = "ctr scorecell"; ts.dataset.s = key;
+      tr.appendChild(ts);
+      const tx = document.createElement("td");
+      if (rowIsCatalogue(key)) {
+        tx.innerHTML = `<a class="btn ghost sm" href="${projectHref(key)}" title="Open this project">Open</a>`;
+      } else {
+        tx.innerHTML = `<button class="btn ghost sm" title="Remove this project" type="button">×</button>`;
+        tx.firstChild.onclick = () => {
+          if (!confirm("Remove “" + key + "” from the list?")) return;
+          delete SCORES.projects[key];
+          SCORES.extra = SCORES.extra.filter(x => x !== key);
+          saveScores(); buildTable(); refresh();
+        };
+      }
+      tr.appendChild(tx);
+      body.appendChild(tr);
+    });
+  });
+}
+
+/* ---------- ranking + plot ---------- */
+function refresh() {
+  document.querySelectorAll("[data-s]").forEach(td => td.textContent = scoreOf(td.dataset.s).toFixed(1));
+  document.getElementById("rank").innerHTML = rankedRows().map(([key, s], i) => `
+    <div class="rank-row">
+      <span class="rank-n">${i + 1}</span>
+      ${rowIsCatalogue(key)
+        ? `<a href="${projectHref(key)}">${esc(rowName(key))}</a>`
+        : `<span style="flex:0 1 260px;font-weight:600;font-size:.92rem">${esc(rowName(key))}</span>`}
+      <span class="rank-bar"><i style="width:${s * 10}%"></i></span>
+      <span class="rank-score">${s.toFixed(1)}</span>
+    </div>`).join("");
+  drawPlot();
+  saveScores();
+}
+
+function drawPlot() {
+  const m = matrixSVG({ keys: ORDER });
+  const svg = document.getElementById("plot");
+  svg.setAttribute("viewBox", `0 0 ${m.vw} ${m.vh}`);
+  svg.innerHTML = m.inner;
+}
+
+/* ---------- axes ---------- */
+function buildAxes() {
+  const opts = CRITERIA.map(c => `<option value="${c.k}">${esc(c.n)}</option>`).join("");
+  const xs = document.getElementById("xaxis"), ys = document.getElementById("yaxis");
+  xs.innerHTML = opts; ys.innerHTML = opts;
+  xs.value = SCORES.x; ys.value = SCORES.y;
+  xs.onchange = () => { SCORES.x = xs.value; saveScores(); refresh(); hint(); };
+  ys.onchange = () => { SCORES.y = ys.value; saveScores(); refresh(); hint(); };
+  hint();
+}
+function hint() {
+  document.getElementById("axisHint").textContent =
+    (SCORES.x === "cost" && SCORES.y === "demand") ? "matching the board's own axes" : "custom view";
+}
+
+/* ---------- controls ---------- */
+document.getElementById("addbtn").onclick = () => {
+  const inp = document.getElementById("newname"), v = inp.value.trim();
+  if (!v) return;
+  if (SCORES.projects[v] || PROJECT_BY_ID[v]) { alert("That project is already in the list."); return; }
+  SCORES.projects[v] = defaultScores();
+  if (!SCORES.extra.includes(v)) SCORES.extra.push(v);
+  inp.value = ""; saveScores(); buildTable(); refresh();
+};
+document.getElementById("newname").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("addbtn").click();
+});
+document.getElementById("resetbtn").onclick = () => {
+  if (!confirm("Set every score back to 5?")) return;
+  allRowKeys().forEach(k => CRITERIA.forEach(c => SCORES.projects[k][c.k] = 5));
+  saveScores(); buildTable(); refresh();
+};
+document.getElementById("exportbtn").onclick = downloadScoresCSV;
+document.getElementById("dlPng").onclick = () => downloadMatrixPNG({ keys: ORDER });
+document.getElementById("dlSvg").onclick = () => downloadMatrixSVG({ keys: ORDER });
+
+buildWeights(); buildTable(); buildAxes(); refresh();
+bootPage("scoring.html");
+</script>
+</body>
+</html>

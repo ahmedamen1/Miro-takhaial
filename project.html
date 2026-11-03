@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project — Takhail</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%233b63d8'/><rect x='7' y='7' width='8' height='8' rx='1.5' fill='%23ffd84d'/><rect x='17' y='7' width='8' height='8' rx='1.5' fill='%236FCF97'/><rect x='7' y='17' width='8' height='8' rx='1.5' fill='%23ff9f6b'/><rect x='17' y='17' width='8' height='8' rx='1.5' fill='%23fff'/></svg>">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .crumb{font-size:.84rem;color:var(--mute);margin-bottom:10px}
+  .crumb a{text-decoration:none;font-weight:600}
+  .crumb a:hover{text-decoration:underline}
+  .p-hero{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+  .p-hero h1{margin:0 0 4px;font-size:2.1rem}
+  .p-tag{color:var(--accent);font-weight:700;font-size:1.02rem;margin:0 0 10px}
+  .big-score{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    padding:16px 22px;text-align:center;box-shadow:var(--shadow);min-width:132px}
+  .big-score b{display:block;font-size:2.5rem;line-height:1.05;color:var(--accent);font-variant-numeric:tabular-nums}
+  .big-score span{font-size:.78rem;color:var(--mute)}
+  .big-score .rank{margin-top:6px;font-size:.8rem;font-weight:700;color:var(--ink)}
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px}
+  .feat div{background:var(--s-cyan);border-radius:3px;padding:11px 14px;font-size:.9rem;
+    box-shadow:0 1px 1px rgba(16,32,64,.1),0 7px 16px -8px rgba(16,32,64,.4)}
+  .sector{display:inline-block;background:var(--accent-soft);color:var(--accent);font-size:.8rem;
+    font-weight:700;padding:3px 11px;border-radius:999px;margin:0 5px 5px 0}
+  .sc-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+  .sc-row:last-child{border-bottom:0}
+  .sc-name{flex:1 1 190px;min-width:150px}
+  .sc-name b{font-size:.93rem;display:block}
+  .sc-name span{font-size:.78rem;color:var(--mute)}
+  .sc-bar{flex:1 1 110px;height:7px;background:var(--line-soft);border-radius:999px;overflow:hidden;min-width:70px}
+  .sc-bar i{display:block;height:100%;background:var(--accent);transition:width .18s}
+  .nav-prev-next{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+  .pn{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 17px;
+    text-decoration:none;color:inherit;box-shadow:var(--shadow);flex:1 1 230px;min-width:0}
+  .pn:hover{border-color:var(--accent)}
+  .pn span{font-size:.74rem;color:var(--mute);display:block}
+  .pn b{font-size:.94rem}
+  .jump{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 0}
+  .jump select{width:auto;min-width:230px}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <div class="crumb"><a href="index.html">Home</a> · <a href="projects.html">Projects</a> · <span id="crumbGroup"></span></div>
+  <div id="hero"></div>
+</div>
+
+<div class="wrap" id="body"></div>
+
+<footer class="site-foot">
+  Takhail workshop board · <a href="projects.html">all projects</a> · <a href="scoring.html">score them all together</a> · <a href="notes.html">all notes</a>
+</footer>
+
+<script src="assets/config.js"></script>
+<script src="assets/team.js"></script>
+<script src="assets/projects.js"></script>
+<script src="assets/scoring.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const pid = params.get("p");
+const P = PROJECT_BY_ID[pid];
+
+if (!P) {
+  document.getElementById("hero").innerHTML = `<h1>Project not found</h1>
+    <p class="sub">Pick one from the list below.</p>`;
+  document.getElementById("body").innerHTML = `<div class="cards">` +
+    PROJECTS.map(p => `<a class="tile" href="${projectHref(p.id)}" style="--tc:#3b63d8">
+      <h3>${esc(p.name)}</h3><p>${esc(p.tagline || p.group)}</p></a>`).join("") + `</div>`;
+} else {
+  document.title = P.name + " — Takhail";
+  document.getElementById("crumbGroup").textContent = P.group;
+
+  document.getElementById("hero").innerHTML = `
+    <div class="p-hero">
+      <div style="flex:1 1 440px;min-width:0">
+        <span class="eyebrow">${esc(P.group)}</span>
+        <h1>${esc(P.name)}</h1>
+        ${P.tagline ? `<p class="p-tag">${esc(P.tagline)}</p>` : ""}
+        <p style="margin:0;color:var(--mute);max-width:70ch">${esc(P.desc || "")}</p>
+      </div>
+      <div class="big-score">
+        <b id="bigScore">–</b>
+        <span>weighted score / 10</span>
+        <div class="rank" id="bigRank"></div>
+      </div>
+    </div>
+    <div class="jump">
+      <label style="font-size:.85rem;font-weight:600">Jump to another project
+        <select id="jumpSel"></select></label>
+    </div>`;
+
+  document.getElementById("body").innerHTML = `
+    ${P.value ? `<div class="callout" style="margin-top:22px;border-left-color:var(--ok)">
+      <b>Added value:</b> ${esc(P.value)}</div>` : ""}
+    ${P.note ? `<div class="callout warn-c" style="margin-top:14px">${esc(P.note)}</div>` : ""}
+
+    ${P.features ? `<section class="blk">
+      <h2><span class="num">1</span> What it does</h2>
+      <div class="feat">${P.features.map(f => `<div>${esc(f)}</div>`).join("")}</div>
+    </section>` : ""}
+
+    ${P.sectors ? `<section class="blk">
+      <h2><span class="num">${P.features ? 2 : 1}</span> Who it is for</h2>
+      <div>${P.sectors.map(s => `<span class="sector">${esc(s)}</span>`).join("")}</div>
+    </section>` : ""}
+
+    <section class="blk" id="score">
+      <h2><span class="num">${(P.features ? 1 : 0) + (P.sectors ? 1 : 0) + 1}</span> Score this project</h2>
+      <p class="sub">Every criterion is 0–10, where <b>10 is always good</b>. These are the same numbers as the
+        <a href="scoring.html">full scoring table</a> — change one here and it changes there too.</p>
+      <div class="card" id="scoreCard"></div>
+      <div class="row">
+        <button class="btn ghost" id="resetOne" type="button">Reset this project to 5</button>
+        <a class="btn ghost" href="scoring.html">Compare with every project →</a>
+      </div>
+      <div data-notes="score-${esc(pid)}"></div>
+    </section>
+
+    <section class="blk" id="matrix">
+      <h2><span class="num">${(P.features ? 1 : 0) + (P.sectors ? 1 : 0) + 2}</span> Where it sits on the matrix</h2>
+      <p class="sub">This project is the <b style="color:#BB6BD9">purple dot</b>. Everything else is plotted for comparison.</p>
+      <svg id="plot" role="img" aria-label="Importance matrix with this project highlighted"></svg>
+      <div class="row">
+        <button class="btn" id="dlPng" type="button">⬇ Download matrix (PNG)</button>
+        <button class="btn ghost" id="dlSvg" type="button">⬇ Download matrix (SVG)</button>
+        <span class="tag grey">the download includes every project title</span>
+      </div>
+    </section>
+
+    <section class="blk" id="discuss">
+      <h2><span class="num">${(P.features ? 1 : 0) + (P.sectors ? 1 : 0) + 3}</span> Notes &amp; questions</h2>
+      <p class="sub">Everything the team has written about <b>${esc(P.name)}</b>. Pick your name in the top-right, then add a note or a question.</p>
+      <div class="card" data-notes="proj-${esc(pid)}"></div>
+    </section>
+
+    <div class="nav-prev-next" id="prevnext"></div>`;
+
+  /* ----- score card ----- */
+  function paintScore() {
+    const row = SCORES.projects[pid];
+    const card = document.getElementById("scoreCard");
+    card.innerHTML = "";
+    CRITERIA.forEach(c => {
+      const d = document.createElement("div"); d.className = "sc-row";
+      const nm = document.createElement("div"); nm.className = "sc-name";
+      nm.innerHTML = `<b>${esc(c.n)}</b><span>${esc(c.s)} · weight ${SCORES.weights[c.k]}</span>`;
+      const bar = document.createElement("div"); bar.className = "sc-bar";
+      const fill = document.createElement("i"); fill.style.width = (row[c.k] * 10) + "%";
+      bar.appendChild(fill);
+      const st = makeStepper(row[c.k], v => {
+        SCORES.projects[pid][c.k] = v; saveScores();
+        fill.style.width = (v * 10) + "%"; paintTotals(); drawPlot();
+      });
+      d.append(nm, bar, st); card.appendChild(d);
+    });
+    paintTotals();
+  }
+  function paintTotals() {
+    const s = scoreOf(pid), r = rankOf(pid);
+    document.getElementById("bigScore").textContent = s.toFixed(1);
+    document.getElementById("bigRank").textContent = `ranked ${r.rank} of ${r.total}`;
+  }
+  function drawPlot() {
+    const m = matrixSVG({ highlight: pid });
+    const svg = document.getElementById("plot");
+    svg.setAttribute("viewBox", `0 0 ${m.vw} ${m.vh}`);
+    svg.innerHTML = m.inner;
+  }
+
+  document.getElementById("resetOne").onclick = () => {
+    CRITERIA.forEach(c => SCORES.projects[pid][c.k] = 5);
+    saveScores(); paintScore(); drawPlot();
+  };
+  document.getElementById("dlPng").onclick = () => downloadMatrixPNG({ highlight: pid });
+  document.getElementById("dlSvg").onclick = () => downloadMatrixSVG({ highlight: pid });
+
+  /* ----- jump + prev/next ----- */
+  const sel = document.getElementById("jumpSel");
+  sel.innerHTML = PROJECT_GROUPS.map(g =>
+    `<optgroup label="${esc(g)}">` + projectsIn(g).map(p =>
+      `<option value="${esc(p.id)}" ${p.id === pid ? "selected" : ""}>${esc(p.name)}</option>`).join("") +
+    `</optgroup>`).join("");
+  sel.onchange = () => location.href = projectHref(sel.value);
+
+  const idx = PROJECTS.findIndex(p => p.id === pid);
+  const prev = PROJECTS[idx - 1], next = PROJECTS[idx + 1];
+  document.getElementById("prevnext").innerHTML =
+    (prev ? `<a class="pn" href="${projectHref(prev.id)}"><span>← Previous</span><b>${esc(prev.name)}</b></a>` : `<span></span>`) +
+    (next ? `<a class="pn" href="${projectHref(next.id)}" style="text-align:right"><span>Next →</span><b>${esc(next.name)}</b></a>` : `<span></span>`);
+
+  paintScore(); drawPlot();
+}
+bootPage("projects.html");
+</script>
+</body>
+</html>
