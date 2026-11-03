@@ -11,10 +11,6 @@ const PROJECTS = [
   { id:"marketing-agent", name:"Marketing Agent", group:"Agents for business",
     desc:"Analyses market trends and audiences, plans campaigns, creates content and ads, and supports execution and optimisation.",
     value:"Reduces marketing workload, improves targeting, and optimises ad spend and performance." },
-  { id:"byoi", name:"Bring Your Own Idea / Problem", group:"Agents for business",
-    desc:"Turn a customer's idea or problem into a tailored solution using AI, automation, or whatever technology fits their need.",
-    value:"Customised solutions for problems no off-the-shelf product covers.",
-    note:"This is the project the seven questions were written against." },
   { id:"analytics", name:"Analytics (text-to-SQL)", group:"Agents for business",
     desc:"Natural-language querying of databases (text-to-SQL) and automatic report generation." },
 

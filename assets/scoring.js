@@ -30,6 +30,11 @@ function loadScoreState() {
   PROJECTS.forEach(p => { if (!s.projects[p.id]) s.projects[p.id] = defaultScores(); });
   // and every project the user added by hand
   s.extra.forEach(name => { if (!s.projects[name]) s.projects[name] = defaultScores(); });
+  // drop scores saved against a project that has since been retired from the
+  // catalogue, so an old browser does not show a stray row in the ranking
+  Object.keys(s.projects).forEach(k => {
+    if (!PROJECT_BY_ID[k] && !s.extra.includes(k)) delete s.projects[k];
+  });
   s.x = s.x || "cost"; s.y = s.y || "demand";
   return s;
 }

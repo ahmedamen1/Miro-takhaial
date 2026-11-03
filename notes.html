@@ -117,8 +117,9 @@ function whereOf(anchor) {
       const p = PROJECT_BY_ID[id];
       if (p) return [projectHref(id) + (prefix === "score-" ? "#score" : "#discuss"),
                      (prefix === "score-" ? "Scoring · " : "Project · ") + p.name];
+      // the project was removed from the catalogue — keep the note readable
       const nice = id.replace(/-/g, " ").replace(/\b\w/g, m => m.toUpperCase());
-      return ["projects.html", "Projects · " + nice];
+      return ["projects.html", "Projects · " + nice + " (removed)"];
     }
   }
   return ["index.html", anchor];
