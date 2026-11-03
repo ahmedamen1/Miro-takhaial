@@ -29,22 +29,27 @@
         create policy "team can write"  on notes for insert with check (true);
         create policy "team can delete" on notes for delete using (true);
 
-   3. Open "Project Settings" (the gear) → "API keys" (or "API").
-      Copy the Project URL and the anon / public key into the two
-      lines below, between the quotes.
+   3. Open "Project Settings" (the gear) → "API Keys".
+      Copy the Project URL and the PUBLISHABLE key (named either
+      "anon / public" or "sb_publishable_...") into the two lines
+      below, between the quotes.
 
    4. Save this file, commit and push. Done — the whole team shares
       notes from that moment on.
 
-   The anon key is meant to be public: it is designed to sit in a web
-   page, and the row-level security policies above are what decide
-   what it can do. This board's notes are open to anyone who has the
-   link, which is the point — the team reads and writes the same board.
-   Do NOT paste the "service_role" key here; that one is a real secret.
+   The publishable key is meant to be public: it is designed to sit in
+   a web page, and the row-level security policies above are what
+   decide what it can do. This board's notes are open to anyone who
+   has the link, which is the point — the team reads and writes the
+   same board.
+
+   NEVER put the SECRET key here (named "service_role" or
+   "sb_secret_..."). It bypasses every security policy. If one is ever
+   exposed, rotate it immediately in Project Settings → API Keys.
    =================================================================== */
 
-window.TK_SUPABASE_URL = "";   // e.g. "https://abcdefghijkl.supabase.co"
-window.TK_SUPABASE_KEY = "";   // the anon / public key (a long eyJ... string)
+window.TK_SUPABASE_URL = "https://gomkmxiaamhlxevjxhhi.supabase.co";
+window.TK_SUPABASE_KEY = "sb_publishable_rus8F-jJkK_Gtvv5Ra3Sdw_wIpqUGEh";
 
 
 /* ---- Optional: the older GitHub-issue backend --------------------
